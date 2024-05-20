@@ -57,6 +57,8 @@ public class UserInterface {
                 case 9:
                     processRemoveVehicleRequest();
                     break;
+                case 10:
+                    processSellOrLeaseVehicleRequest();
                 case 99:
                     break;
             }
@@ -179,6 +181,7 @@ public class UserInterface {
         DealershipFileManager.saveDealership(this.dealership);
     }
     public void processRemoveVehicleRequest(){
+
         List<Vehicle> allVehicles = this.dealership.getAllVehicles();
         displayVehicles(allVehicles);
         System.out.print("Which would you like to remove? VIN: ");
@@ -194,5 +197,49 @@ public class UserInterface {
         }
 
         System.out.println("Vehicle not found");
+    }
+
+    public void processSellOrLeaseVehicleRequest() {
+
+        System.out.print("Enter VIN of the vehicle: ");
+        int vin = scanner.nextInt();
+        scanner.nextLine();  // Consume newline
+
+        Vehicle vehicle = dealership.findVehicleByVin(vin);
+        if (vehicle == null) {
+            System.out.println("Vehicle not found in inventory.");
+            return;
+        }
+
+        System.out.print("Enter contract date (YYYYMMDD): ");
+        String date = scanner.nextLine();
+        System.out.print("Enter customer name: ");
+        String customerName = scanner.nextLine();
+        System.out.print("Enter customer email: ");
+        String customerEmail = scanner.nextLine();
+
+        System.out.print("Is this a sale or lease? (Enter 'sale' or 'lease'): ");
+        String contractType = scanner.nextLine().trim().toLowerCase();
+
+        Contract contract;
+        if (contractType.equals("sale")) {
+            System.out.print("Does the customer want to finance? (yes/no): ");
+            String financeOption = scanner.nextLine().trim().toLowerCase();
+            boolean isFinanced = financeOption.equals("yes");
+            contract = new SalesContract(date, customerName, customerEmail, vehicle, isFinanced);
+        } else if (contractType.equals("lease")) {
+            if (vehicle.getYear() > 3) {
+                System.out.println("You cannot lease a vehicle over 3 years old.");
+                return;
+            }
+            contract = new LeaseContract(date, customerName, customerEmail, vehicle);
+        } else {
+            System.out.println("Invalid contract type.");
+            return;
+        }
+
+        ContractFileManager.saveContract(contract);
+        dealership.removeVehicle(vehicle);
+        System.out.println("Contract saved successfully.");
     }
 }
